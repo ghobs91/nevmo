@@ -4,6 +4,7 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   History,
+  LogOut,
 } from "lucide-react";
 
 const API_URL = "http://localhost:8000/api";
@@ -190,224 +191,284 @@ const App = () => {
     }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+  };
+
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Welcome to Nevmo
-            </h1>
-            <p className="text-gray-600">Your Digital Payment Solution</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-white mb-2">Nevmo</h1>
+            <p className="text-blue-100">Your Modern Payment Solution</p>
           </div>
 
-          {errors.submit && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {errors.submit}
+          <div className="bg-white rounded-2xl shadow-2xl">
+            {errors.submit && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 m-4">
+                <p className="text-red-700">{errors.submit}</p>
+              </div>
+            )}
+
+            <div className="p-6">
+              {activeTab === "login" ? (
+                <>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                    Welcome back
+                  </h2>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        className={`w-full p-3 rounded-lg border ${
+                          errors.email ? "border-red-500" : "border-gray-200"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow`}
+                        value={loginData.email}
+                        onChange={(e) =>
+                          setLoginData({ ...loginData, email: e.target.value })
+                        }
+                      />
+                      {errors.email && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        className={`w-full p-3 rounded-lg border ${
+                          errors.password ? "border-red-500" : "border-gray-200"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow`}
+                        value={loginData.password}
+                        onChange={(e) =>
+                          setLoginData({
+                            ...loginData,
+                            password: e.target.value,
+                          })
+                        }
+                      />
+                      {errors.password && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.password}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 mr-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50"
+                      >
+                        {loading ? "Logging in..." : "Login"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("register")}
+                        className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-6">
+                    <button
+                      onClick={() => setActiveTab("login")}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      ← Back
+                    </button>
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                      Create Account
+                    </h2>
+                  </div>
+                  <form onSubmit={handleRegister} className="space-y-4">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        className={`w-full p-3 rounded-lg border ${
+                          errors.name ? "border-red-500" : "border-gray-200"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow`}
+                        value={registerData.name}
+                        onChange={(e) =>
+                          setRegisterData({
+                            ...registerData,
+                            name: e.target.value,
+                          })
+                        }
+                      />
+                      {errors.name && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.name}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        className={`w-full p-3 rounded-lg border ${
+                          errors.email ? "border-red-500" : "border-gray-200"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow`}
+                        value={registerData.email}
+                        onChange={(e) =>
+                          setRegisterData({
+                            ...registerData,
+                            email: e.target.value,
+                          })
+                        }
+                      />
+                      {errors.email && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        className={`w-full p-3 rounded-lg border ${
+                          errors.password ? "border-red-500" : "border-gray-200"
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow`}
+                        value={registerData.password}
+                        onChange={(e) =>
+                          setRegisterData({
+                            ...registerData,
+                            password: e.target.value,
+                          })
+                        }
+                      />
+                      {errors.password && (
+                        <p className="text-red-500 text-sm mt-1">
+                          {errors.password}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all disabled:opacity-50"
+                    >
+                      {loading ? "Creating Account..." : "Create Account"}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
-          )}
-
-          <div className="flex mb-4">
-            <button
-              onClick={() => setActiveTab("login")}
-              className={`flex-1 py-2 ${
-                activeTab === "login"
-                  ? "border-b-2 border-blue-500 text-blue-500"
-                  : "text-gray-500"
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setActiveTab("register")}
-              className={`flex-1 py-2 ${
-                activeTab === "register"
-                  ? "border-b-2 border-blue-500 text-blue-500"
-                  : "text-gray-500"
-              }`}
-            >
-              Register
-            </button>
           </div>
-
-          {activeTab === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className={`w-full p-2 border rounded ${
-                    errors.email ? "border-red-500" : "border-gray-300"
-                  }`}
-                  value={loginData.email}
-                  onChange={(e) =>
-                    setLoginData({ ...loginData, email: e.target.value })
-                  }
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className={`w-full p-2 border rounded ${
-                    errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
-                  value={loginData.password}
-                  onChange={(e) =>
-                    setLoginData({ ...loginData, password: e.target.value })
-                  }
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-                )}
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-              >
-                {loading ? "Loading..." : "Login"}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Name"
-                  className={`w-full p-2 border rounded ${
-                    errors.name ? "border-red-500" : "border-gray-300"
-                  }`}
-                  value={registerData.name}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, name: e.target.value })
-                  }
-                />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-                )}
-              </div>
-              <div>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  className={`w-full p-2 border rounded ${
-                    errors.email ? "border-red-500" : "border-gray-300"
-                  }`}
-                  value={registerData.email}
-                  onChange={(e) =>
-                    setRegisterData({ ...registerData, email: e.target.value })
-                  }
-                />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
-              </div>
-              <div>
-                <input
-                  type="password"
-                  placeholder="Password"
-                  className={`w-full p-2 border rounded ${
-                    errors.password ? "border-red-500" : "border-gray-300"
-                  }`}
-                  value={registerData.password}
-                  onChange={(e) =>
-                    setRegisterData({
-                      ...registerData,
-                      password: e.target.value,
-                    })
-                  }
-                />
-                {errors.password && (
-                  <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-                )}
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-              >
-                {loading ? "Loading..." : "Register"}
-              </button>
-            </form>
-          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-4xl mx-auto space-y-4">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Welcome, {user.name}
-            </h2>
-            <p className="text-gray-600">Manage your account</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Nevmo</h1>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 py-2 px-4 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
           </div>
-          <div className="text-2xl font-bold flex items-center gap-2 text-gray-900">
-            <DollarSign className="h-6 w-6" />
-            Balance: ${balance.toFixed(2)}
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-1">Welcome back</p>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {user.name}
+              </h2>
+            </div>
+            <div className="flex items-center gap-3 text-3xl font-bold text-gray-900">
+              <DollarSign className="h-8 w-8 text-blue-500" />$
+              {balance.toFixed(2)}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Quick Actions
+            </h3>
+
+            {errors.transaction && (
+              <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+                {errors.transaction}
+              </div>
+            )}
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  placeholder="Amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+                />
+              </div>
+              <button
+                onClick={() => handleTransaction("deposit")}
+                disabled={transactionLoading}
+                className="flex items-center gap-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+              >
+                <ArrowDownCircle className="h-4 w-4" />
+                <span className="hidden md:inline">Deposit</span>
+              </button>
+              <button
+                onClick={() => handleTransaction("withdraw")}
+                disabled={transactionLoading}
+                className="flex items-center gap-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                <ArrowUpCircle className="h-4 w-4" />
+                <span className="hidden md:inline">Withdraw</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-900">Transactions</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+              <History className="h-5 w-5" />
+              Transaction History
+            </div>
+          </div>
 
-          {errors.transaction && (
-            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {errors.transaction}
+          {errors.transactions && (
+            <div className="p-4 bg-red-50 border-l-4 border-red-500 m-4 text-red-700 text-sm rounded">
+              {errors.transactions}
             </div>
           )}
 
-          <div className="flex gap-4 mb-6">
-            <input
-              type="number"
-              placeholder="Amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 rounded"
-            />
-            <button
-              onClick={() => handleTransaction("deposit")}
-              disabled={transactionLoading}
-              className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-green-300"
-            >
-              <ArrowDownCircle className="h-4 w-4" /> Deposit
-            </button>
-            <button
-              onClick={() => handleTransaction("withdraw")}
-              disabled={transactionLoading}
-              className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:bg-red-300"
-            >
-              <ArrowUpCircle className="h-4 w-4" /> Withdraw
-            </button>
-          </div>
-
-          <div>
-            <div className="font-semibold flex items-center gap-2 mb-3">
-              <History className="h-4 w-4" /> Transaction History
-            </div>
-            {errors.transactions && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                {errors.transactions}
-              </div>
-            )}
-            <div className="space-y-2">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                >
+          <div className="divide-y divide-gray-100">
+            {transactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex justify-between items-center">
                   <div>
                     <span className="font-medium capitalize">
                       {transaction.type}
                     </span>
-                    <span className="text-gray-500 text-sm ml-2">
+                    <span className="text-sm text-gray-500 ml-2">
                       {new Date(transaction.date).toLocaleString()}
                     </span>
                   </div>
@@ -422,8 +483,14 @@ const App = () => {
                     {transaction.amount.toFixed(2)}
                   </span>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+
+            {transactions.length === 0 && (
+              <div className="p-8 text-center text-gray-500">
+                No transactions yet
+              </div>
+            )}
           </div>
         </div>
       </div>
