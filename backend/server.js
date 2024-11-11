@@ -225,78 +225,106 @@ app.get("/api/transactions", authenticateToken, async (req, res, next) => {
   try {
     const transactions = await Transaction.find({ userId: req.user._id })
       .sort({ date: -1 })
-      .limit(50);
-    res.json(transactions);
+      .limit(50)
+      .lean() // Convert to plain JavaScript objects
+      .exec();
+
+    // Format transactions for frontend
+    const formattedTransactions = transactions.map((t) => ({
+      id: t._id,
+      type: t.type,
+      amount: t.amount,
+      date: t.date,
+    }));
+
+    res.json(formattedTransactions);
   } catch (error) {
+    console.error("Fetch transactions error:", error);
     next(error);
   }
 });
 
 // Process deposit
 app.post("/api/deposit", authenticateToken, async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const { amount } = transactionSchema.parse(req.body);
 
-    const user = await User.findById(req.user._id).session(session);
-    user.balance += amount;
-    await user.save();
+    // Update user balance
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $inc: { balance: amount } }, // Use atomic increment
+      { new: true }, // Return updated document
+    );
 
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Create transaction record
     const transaction = new Transaction({
       userId: user._id,
       type: "deposit",
-      amount,
+      amount: amount,
     });
-    await transaction.save({ session });
+    await transaction.save();
 
-    await session.commitTransaction();
     res.json({
       balance: user.balance,
-      transaction,
+      transaction: {
+        id: transaction._id,
+        type: transaction.type,
+        amount: transaction.amount,
+        date: transaction.date,
+      },
     });
   } catch (error) {
-    await session.abortTransaction();
+    console.error("Deposit error:", error);
     next(error);
-  } finally {
-    session.endSession();
   }
 });
 
 // Process withdrawal
 app.post("/api/withdraw", authenticateToken, async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const { amount } = transactionSchema.parse(req.body);
 
-    const user = await User.findById(req.user._id).session(session);
-    if (amount > user.balance) {
+    // First check if user has sufficient balance
+    const currentUser = await User.findById(req.user._id);
+    if (!currentUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (currentUser.balance < amount) {
       return res.status(400).json({ error: "Insufficient funds" });
     }
 
-    user.balance -= amount;
-    await user.save();
+    // Update user balance
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $inc: { balance: -amount } }, // Use atomic decrement
+      { new: true },
+    );
 
+    // Create transaction record
     const transaction = new Transaction({
       userId: user._id,
       type: "withdraw",
-      amount,
+      amount: amount,
     });
-    await transaction.save({ session });
+    await transaction.save();
 
-    await session.commitTransaction();
     res.json({
       balance: user.balance,
-      transaction,
+      transaction: {
+        id: transaction._id,
+        type: transaction.type,
+        amount: transaction.amount,
+        date: transaction.date,
+      },
     });
   } catch (error) {
-    await session.abortTransaction();
+    console.error("Withdrawal error:", error);
     next(error);
-  } finally {
-    session.endSession();
   }
 });
 
