@@ -22,12 +22,19 @@ mongoose
 
 // MongoDB Schemas
 const UserSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true, // Add this to ensure consistent email casing
+    trim: true, // Remove whitespace
+  },
   name: { type: String, required: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   balance: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 });
+UserSchema.index({ email: 1 }, { unique: true });
 
 const TransactionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -38,6 +45,16 @@ const TransactionSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", UserSchema);
 const Transaction = mongoose.model("Transaction", TransactionSchema);
+
+// Create indexes when the application starts
+const createIndexes = async () => {
+  try {
+    await User.createIndexes();
+    console.log("Indexes created successfully");
+  } catch (error) {
+    console.error("Error creating indexes:", error);
+  }
+};
 
 // Validation Schemas
 const registerSchema = z.object({
@@ -101,19 +118,34 @@ const authenticateToken = async (req, res, next) => {
 app.post("/api/register", async (req, res, next) => {
   try {
     const validatedData = registerSchema.parse(req.body);
+    console.log("Registration attempt for email:", validatedData.email);
 
+    // Clear any existing users with this email (temporary debug fix)
+    await User.deleteMany({ email: validatedData.email });
+
+    // Double check the email doesn't exist (with debug logging)
     const existingUser = await User.findOne({ email: validatedData.email });
+    console.log("Existing user check result:", existingUser);
+
     if (existingUser) {
+      console.log("Email already exists:", validatedData.email);
       return res.status(400).json({ error: "Email already registered" });
     }
 
+    // Log the user data we're about to save
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
-    const user = new User({
-      ...validatedData,
+    const userData = {
+      email: validatedData.email,
+      name: validatedData.name,
       password: hashedPassword,
-    });
+      balance: 0,
+    };
+    console.log("Creating new user:", { ...userData, password: "[HIDDEN]" });
 
+    const user = new User(userData);
     await user.save();
+
+    console.log("User saved successfully:", user.email);
 
     const token = jwt.sign({ email: user.email }, JWT_SECRET);
     res.status(201).json({
@@ -125,17 +157,34 @@ app.post("/api/register", async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error("Registration error:", error);
     next(error);
   }
 });
 
-// Login
+// Login route
 app.post("/api/login", async (req, res, next) => {
   try {
     const validatedData = loginSchema.parse(req.body);
-    const user = await User.findOne({ email: validatedData.email });
+
+    // Explicitly select the password field (MongoDB might exclude it by default)
+    const user = await User.findOne({ email: validatedData.email }).select(
+      "+password",
+    );
 
     if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Add debug logging
+    console.log("Login attempt:", {
+      email: validatedData.email,
+      hasPassword: !!user.password,
+      providedPassword: !!validatedData.password,
+    });
+
+    // Ensure both passwords exist before comparing
+    if (!user.password || !validatedData.password) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
@@ -157,6 +206,7 @@ app.post("/api/login", async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error("Login error:", error);
     next(error);
   }
 });
@@ -250,10 +300,21 @@ app.post("/api/withdraw", authenticateToken, async (req, res, next) => {
   }
 });
 
+mongoose
+  .connect("mongodb://localhost:27017/nevmo", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+    return createIndexes();
+  })
+  .catch((err) => console.error("MongoDB connection error:", err));
+
 // Error handling middleware
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

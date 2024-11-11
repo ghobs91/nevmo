@@ -6,7 +6,7 @@ import {
   History,
 } from "lucide-react";
 
-const API_URL = "http://localhost:3000/api";
+const API_URL = "http://localhost:8000/api";
 
 const App = () => {
   const [user, setUser] = useState(null);
